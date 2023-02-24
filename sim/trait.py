@@ -4,17 +4,15 @@ import jax.nn as nn
 import jax.random as rdm
 import jax.scipy.stats as stats
 
-from . import geno
-
 
 # naive simulation of quantitative trait
-def naive_trait_sim(n_samples: int, p_snps: int, causal_prop: float, h2g: float, rng_key):
-  # split our key
-  rng_key, geno_key, beta_key, choice_key, env_key = rdm.split(rng_key, 5)
-  
-  # generate genotype
-  X = geno.naive_sim_genotype(n_samples, p_snps, rng_key=geno_key)
+def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
 
+  n_ind, p_snps = X.shape
+
+  # split our key
+  rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
+  
   num_causal = int(jnp.ceil(p_snps * causal_prop))
 
   # simulate causal effects
@@ -32,16 +30,16 @@ def naive_trait_sim(n_samples: int, p_snps: int, causal_prop: float, h2g: float,
   # generate phenotype/trait
   y = g + jnp.sqrt(s2e) * rdm.normal(key=env_key, shape=(n_samples,))
 
-  return X, y
+  return y
   
 
-def naive_disease_sim(n_samples: int, p_snps: int, causal_prop: float, h2g: float, prevalence: float, rng_key):
-# split our key
-  rng_key, geno_key, beta_key, choice_key, env_key = rdm.split(rng_key, 5)
-  
-  # generate genotype
-  X = geno.naive_sim_genotype(n_samples, p_snps, rng_key=geno_key)
+def naive_disease_sim(X: jnp.ndarray, causal_prop: float, h2g: float, prevalence: float, rng_key):
 
+  n_ind, p_snps = X.shape
+
+  # split our key
+  rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
+  
   num_causal = int(jnp.ceil(p_snps * causal_prop))
 
   # simulate causal effects
@@ -67,4 +65,4 @@ def naive_disease_sim(n_samples: int, p_snps: int, causal_prop: float, h2g: floa
   # if liability is past threshold, then disease = 1
   y = (g >= t).astype(int)
 
-  return X, y
+  return y
