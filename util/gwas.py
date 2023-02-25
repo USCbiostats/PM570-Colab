@@ -11,7 +11,7 @@ from scipy import stats
 def _trait_scan_ols(X, y):
     n, p = X.shape
     covar = jnp.ones((n,))
-    results = lax.scan(ols, y, X.T)
+    y, results = lax.scan(ols, y, X.T)
     return results
 
 
