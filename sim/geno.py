@@ -38,7 +38,7 @@ def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.1):
 
   p, p = L.shape
 
-  Z = (L @ rdm.normal(size=(n,p)).T).T
+  Z = (L @ rdm.normal(rng_key, shape=(n,p)).T).T
   Z -= jnp.mean(Z, axis=0)
   Z /= jnp.std(Z, axis=0)
 
