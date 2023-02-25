@@ -34,7 +34,7 @@ def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.1):
   LD = LD / (1 + ld_ridge)
 
   # compute cholesky decomp for faster sampling/simulation
-  L = jnla.cholesky(LD, lower=True)
+  L = jnla.cholesky(LD)
 
   p, p = L.shape
 
