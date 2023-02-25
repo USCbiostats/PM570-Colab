@@ -8,7 +8,7 @@ import jax.scipy.stats as stats
 # naive simulation of quantitative trait
 def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
 
-  n_ind, p_snps = X.shape
+  n_samples, p_snps = X.shape
 
   # split our key
   rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
@@ -35,7 +35,7 @@ def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
 
 def naive_disease_sim(X: jnp.ndarray, causal_prop: float, h2g: float, prevalence: float, rng_key):
 
-  n_ind, p_snps = X.shape
+  n_samples, p_snps = X.shape
 
   # split our key
   rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
