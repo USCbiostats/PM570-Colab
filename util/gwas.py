@@ -30,7 +30,7 @@ def trait_scan_ols(X, y):
 # OLS with variables (x, covar) and y
 def ols(x, y):
     n = len(y)
-    covar = jnp.ones((n,))
+    covar = jnp.ones((n, 1))
     X = jnp.hstack((x[:, jnp.newaxis], covar))
 
     q_matrix, r_matrix = jnp.linalg.qr(X, mode="reduced")
