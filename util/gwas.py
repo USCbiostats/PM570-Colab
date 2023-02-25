@@ -28,7 +28,7 @@ def trait_scan_ols(X, y):
 
 
 # OLS with variables (x, covar) and y
-def ols(X, y):
+def ols(x, y):
     n = len(y)
     covar = jnp.ones((n,))
     X = jnp.hstack((x[:, jnp.newaxis], covar))
