@@ -19,7 +19,7 @@ def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.1):
 
   # return cholesky L and ldscs
   bim, fam, G = pdp.read_plink(prefix, verbose=False)
-  G = G.T
+  G = jnp.asarray(G.T.compute())
 
   # estimate LD for population from PLINK data
   n, p = [float(x) for x in G.shape]
