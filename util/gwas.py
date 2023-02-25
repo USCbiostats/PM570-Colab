@@ -52,4 +52,4 @@ def ols(x, y):
     #p_value = jnp.array(2 * stats.t.sf(abs(t_scores), df=df))
     p_value = 2 * jsp.stats.norm.cdf(-abs(t_scores))
 
-    return jnp.array([beta_hat, se, t_scores, pvalue]).T[0]
+    return jnp.array([beta_hat, se, t_scores, p_value]).T[0]
