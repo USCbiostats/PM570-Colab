@@ -22,13 +22,11 @@ def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.1):
   G = jnp.asarray(G.T.compute())
 
   # estimate LD for population from PLINK data
-  n, p = [float(x) for x in G.shape]
-  p_int = int(p)
   mafs = jnp.mean(G, axis=0) / 2
   G = (G - jnp.mean(G, axis=0)) / jnp.std(G, axis=0) 
 
   # regularize so that LD is PSD
-  LD = jnp.dot(G.T, G) / n + jnp.eye(p_int) * ld_ridge
+  LD = jnp.dot(G.T, G) / n + jnp.eye(p) * ld_ridge
 
   # re-adjust to get proper correlation matrix
   LD = LD / (1 + ld_ridge)
