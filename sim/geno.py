@@ -21,6 +21,7 @@ def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.1):
   bim, fam, G = pdp.read_plink(prefix, verbose=False)
   G = jnp.asarray(G.T.compute())
 
+  n, p = G.shape
   # estimate LD for population from PLINK data
   mafs = jnp.mean(G, axis=0) / 2
   G = (G - jnp.mean(G, axis=0)) / jnp.std(G, axis=0) 
