@@ -8,61 +8,63 @@ import jax.scipy.stats as stats
 # naive simulation of quantitative trait
 def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
 
-  n_samples, p_snps = X.shape
+    n_samples, p_snps = X.shape
 
-  # split our key
-  rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
-  
-  num_causal = int(jnp.ceil(p_snps * causal_prop))
+    # split our key
+    rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
 
-  # simulate causal effects
-  beta = jnp.sqrt(h2g / num_causal) * rdm.normal(key=beta_key, shape=(num_causal,))
+    num_causal = int(jnp.ceil(p_snps * causal_prop))
 
-  # select causal SNPs
-  causals = rdm.choice(choice_key, p_snps, (num_causal,), replace=False)
+    # simulate causal effects
+    beta = jnp.sqrt(h2g / num_causal) * rdm.normal(key=beta_key, shape=(num_causal,))
 
-  # generate genetic values
-  g = X[:, causals] @ beta
+    # select causal SNPs
+    causals = rdm.choice(choice_key, p_snps, (num_causal,), replace=False)
 
-  s2g = jnp.var(g)
-  s2e = ((1 / h2g) - 1) * s2g
+    # generate genetic values
+    g = X[:, causals] @ beta
 
-  # generate phenotype/trait
-  y = g + jnp.sqrt(s2e) * rdm.normal(key=env_key, shape=(n_samples,))
+    s2g = jnp.var(g)
+    s2e = ((1 / h2g) - 1) * s2g
 
-  return y
-  
+    # generate phenotype/trait
+    y = g + jnp.sqrt(s2e) * rdm.normal(key=env_key, shape=(n_samples,))
 
-def naive_disease_sim(X: jnp.ndarray, causal_prop: float, h2g: float, prevalence: float, rng_key):
+    return y
 
-  n_samples, p_snps = X.shape
 
-  # split our key
-  rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
-  
-  num_causal = int(jnp.ceil(p_snps * causal_prop))
+def naive_disease_sim(
+    X: jnp.ndarray, causal_prop: float, h2g: float, prevalence: float, rng_key
+):
 
-  # simulate causal effects
-  beta = jnp.sqrt(h2g / num_causal) * rdm.normal(key=beta_key, shape=(num_causal,))
+    n_samples, p_snps = X.shape
 
-  # select causal SNPs
-  causals = rdm.choice(choice_key, p_snps, (num_causal,), replace=False)
+    # split our key
+    rng_key, beta_key, choice_key, env_key = rdm.split(rng_key, 4)
 
-  # generate genetic values
-  g = X[:, causals] @ beta
+    num_causal = int(jnp.ceil(p_snps * causal_prop))
 
-  # rescale betas to ensure h2g matches specified h2g
-  s2g = jnp.var(g)
-  beta *= jnp.sqrt(h2g / s2g)
+    # simulate causal effects
+    beta = jnp.sqrt(h2g / num_causal) * rdm.normal(key=beta_key, shape=(num_causal,))
 
-  # final g based on rescale beta
-  g = X[:, causals] @ beta
-  g = g - jnp.mean(g, axis=0)
+    # select causal SNPs
+    causals = rdm.choice(choice_key, p_snps, (num_causal,), replace=False)
 
-  # upper quantile function to get threshold
-  t = -stats.norm.ppf(prevalence, scale=jnp.sqrt(h2g))
+    # generate genetic values
+    g = X[:, causals] @ beta
 
-  # if liability is past threshold, then disease = 1
-  y = (g >= t).astype(int)
+    # rescale betas to ensure h2g matches specified h2g
+    s2g = jnp.var(g)
+    beta *= jnp.sqrt(h2g / s2g)
 
-  return y
+    # final g based on rescale beta
+    g = X[:, causals] @ beta
+    g = g - jnp.mean(g, axis=0)
+
+    # upper quantile function to get threshold
+    t = -stats.norm.ppf(prevalence, scale=jnp.sqrt(h2g))
+
+    # if liability is past threshold, then disease = 1
+    y = (g >= t).astype(int)
+
+    return y
