@@ -27,7 +27,7 @@ def naive_sim_genotype(n_samples: int, p_snps: int, rng_key):
     return X
 
 
-def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.1):
+def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.01):
     """Simulate approximate genotypes using real genotype data from a PLINK
     dataset. Simulated data will reflect LD  patterns in real data, but have
     continous approximations to genotype data under an MVN.
