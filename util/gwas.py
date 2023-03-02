@@ -142,7 +142,7 @@ def _bern_negloglike(beta, y, X):
     prob = nn.sigmoid(lin_pred)
 
     # lets break this down...
-    # loglikelihood is sum_i y_i * log(prob_i) + (1 - y_i) * log(prob_i)
+    # loglikelihood is sum_i y_i * log(prob_i) + (1 - y_i) * log(1 - prob_i)
     # log(prob_i) = log(sigmoid(lin_pred)) = log(1) - log(1 + e^(-lin_pred))
     #             = 0 - log(1 + e^(-lin_pred)) = softplus(-lin_pred)
     # similarly, 1 - prob_i = 1 - sigmoid(lin_pred) = sigmoid(-lin_pred)
