@@ -3,7 +3,8 @@ import jax.lax as lax
 import jax.numpy as jnp
 import pandas as pd
 
-import optimization as opt
+# this is local
+from . import optimization as opt
 
 
 @jax.jit
