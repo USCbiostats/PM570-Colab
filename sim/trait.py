@@ -42,6 +42,9 @@ def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
     # generate phenotype/trait
     y = g + jnp.sqrt(s2e) * rdm.normal(key=env_key, shape=(n_samples,))
 
+    y = y - jnp.mean(y)
+    y = y / jnp.std(y)
+
     return y
 
 

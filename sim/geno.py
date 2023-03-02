@@ -27,14 +27,14 @@ def naive_sim_genotype(n_samples: int, p_snps: int, rng_key):
     return X
 
 
-def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.01):
+def sim_geno_from_plink(prefix: str, n_samples: int, rng_key, ld_ridge: float = 0.01):
     """Simulate approximate genotypes using real genotype data from a PLINK
     dataset. Simulated data will reflect LD  patterns in real data, but have
     continous approximations to genotype data under an MVN.
 
     Args:
         prefix: the path to the PLINK triplet.
-        n: the number of samples to generate.
+        n_samples: the number of samples to generate.
         rng_key: the `jax.random.PRNGKey` to sample data with.
         ld_ridge: an offset to ensure that the LD matrix is PSD.
     """
@@ -58,7 +58,7 @@ def sim_geno_from_plink(prefix: str, n: int, rng_key, ld_ridge: float = 0.01):
 
     p, p = L.shape
 
-    Z = (L @ rdm.normal(rng_key, shape=(n, p)).T).T
+    Z = (L @ rdm.normal(rng_key, shape=(n_samples, p)).T).T
     Z -= jnp.mean(Z, axis=0)
     Z /= jnp.std(Z, axis=0)
 
