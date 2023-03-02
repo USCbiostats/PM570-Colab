@@ -7,6 +7,18 @@ import jax.scipy.stats as stats
 
 # naive simulation of quantitative trait
 def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
+    """Simulate a complex trait from genotype data using a constant proportion of causal
+    variants, each of which have same prior effect variance (i.e. propto h2g).
+
+    Args:
+        X: the genotype matrix.
+        causal_prop: the proportion of variants to have an effect on outcome/trait.
+        h2g: the SNP heritability explained by causal SNPs.
+        rng_key: the `jax.random.PRNGKey` to sample data with.
+
+    Returns:
+        `jnp.ndarray`: The simulated phenotype
+    """
 
     n_samples, p_snps = X.shape
 
@@ -36,6 +48,19 @@ def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
 def naive_disease_sim(
     X: jnp.ndarray, causal_prop: float, h2g: float, prevalence: float, rng_key
 ):
+    """Simulate a complex trait from genotype data using a constant proportion of causal
+    variants, each of which have same prior effect variance (i.e. propto h2g).
+
+    Args:
+        X: the genotype matrix.
+        causal_prop: the proportion of variants to have an effect on outcome/trait.
+        h2g: the SNP heritability explained by causal SNPs.
+        prevalence: the prevalence of the disease/outcome in the population.
+        rng_key: the `jax.random.PRNGKey` to sample data with.
+
+    Returns:
+        `jnp.ndarray`: The simulated binary phenotype
+    """
 
     n_samples, p_snps = X.shape
 
@@ -65,6 +90,6 @@ def naive_disease_sim(
     t = -stats.norm.ppf(prevalence, scale=jnp.sqrt(h2g))
 
     # if liability is past threshold, then disease = 1
-    y = (g >= t).astype(int)
+    y = (g >= t).astype(float)
 
     return y
