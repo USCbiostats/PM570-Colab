@@ -17,14 +17,7 @@ def _trait_scan_ols(X, y):
 
 def trait_scan_ols(X, y):
     results = _trait_scan_ols(X, y)
-    return pd.DataFrame(
-        {
-            "beta": results.T[0],
-            "se": results.T[1],
-            "tscore": results.T[2],
-            "pvalue": results.T[3],
-        }
-    )
+    return pd.DataFrame(results, columns=["beta", "se", "zscore", "pvalue"])
 
 
 # OLS with variables (x, covar) and y
