@@ -17,7 +17,7 @@ def _trait_scan_ols(X, y):
 
 def trait_scan_ols(X, y):
     results = _trait_scan_ols(X, y)
-    return pd.DataFrame(results, columns=["beta", "se", "zscore", "pvalue"])
+    return pd.DataFrame(results, columns=["beta", "se", "zscore", "log.pval"])
 
 
 # OLS with variables (x, covar) and y
@@ -43,6 +43,6 @@ def ols(x, y):
     )
     t_scores = beta_hat / se
     #p_value = jnp.array(2 * stats.t.sf(abs(t_scores), df=df))
-    p_value = 2 * jsp.stats.norm.cdf(-abs(t_scores))
+    log_p_value = jnp.log(2) + jsp.stats.norm.logcdf(-abs(t_scores))
 
-    return y, jnp.array([beta_hat, se, t_scores, p_value]).T[0]
+    return y, jnp.array([beta_hat, se, t_scores, log_p_value]).T[0]
