@@ -139,17 +139,17 @@ def _newton_cg(loss, x0, tol=1e-3, maxiter=100):
 def _bern_negloglike(beta, y, X):
     # squash R => [0, 1]
     lin_pred = X @ beta
-    prob = nn.sigmoid(lin_pred)
 
+    # prob = nn.sigmoid(lin_pred)
     # lets break this down...
     # loglikelihood is sum_i y_i * log(prob_i) + (1 - y_i) * log(1 - prob_i)
     # log(prob_i) = log(sigmoid(lin_pred)) = log(1) - log(1 + e^(-lin_pred))
-    #             = 0 - log(1 + e^(-lin_pred)) = softplus(-lin_pred)
+    #             = 0 - log(1 + e^(-lin_pred)) = -softplus(-lin_pred)
     # similarly, 1 - prob_i = 1 - sigmoid(lin_pred) = sigmoid(-lin_pred)
-    # hence, log(1 - prob_i) = log(sigmoid(-lin_pred)) = log(1 + e^lin_pred)
-    #                        = softplus(lin_pred)
-    # we return negative loglikelihood bc we are minimizing, hence "-" in front
-    return -jnp.sum(nn.softplus(jnp.where(y, -prob, prob)))
+    # hence, log(1 - prob_i) = log(sigmoid(-lin_pred)) = 0 - log(1 + e^lin_pred)
+    #                        = -softplus(lin_pred)
+    # we drop the "-" in front of softplus to reflect neg log like
+    return jnp.sum(nn.softplus(jnp.where(y, -lin_pred, lin_pred)))
 
 
 class LogisticRegression(_AbstractRegressionFunc):
