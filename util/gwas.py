@@ -172,7 +172,7 @@ class LogisticRegression(_AbstractRegressionFunc):
         converged = (jnp.ones(X.shape[1]) * converged).astype(float)
 
         # not exactly the fisher information matrix, but close enough...
-        se = jnp.diag(jnp.linalg.inv(-jax.hessian(_loss)(beta_hat)))
+        se = jnp.sqrt(jnp.diag(jnp.linalg.inv(jax.hessian(_loss)(beta_hat))))
         t_scores = beta_hat / se
         # p_value = jnp.array(2 * stats.t.sf(abs(t_scores), df=df))
         log_p_value = jnp.log(2) + jsp.stats.norm.logcdf(-jnp.abs(t_scores))
