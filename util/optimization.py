@@ -159,14 +159,15 @@ def _bern_negloglike(beta, y, X):
     # squash R => [0, 1]
     lin_pred = X @ beta
 
-    # prob = nn.sigmoid(lin_pred)
     # lets break this down...
-    # loglikelihood is sum_i y_i * log(prob_i) + (1 - y_i) * log(1 - prob_i)
-    # log(prob_i) = log(sigmoid(lin_pred)) = log(1) - log(1 + e^(-lin_pred))
-    #             = 0 - log(1 + e^(-lin_pred)) = -softplus(-lin_pred)
-    # similarly, 1 - prob_i = 1 - sigmoid(lin_pred) = sigmoid(-lin_pred)
-    # hence, log(1 - prob_i) = log(sigmoid(-lin_pred)) = 0 - log(1 + e^lin_pred)
-    #                        = -softplus(lin_pred)
+    # prob_i = sigmoid(lin_pred_i)
+    #
+    # loglikelihood := sum_i y_i * log(prob_i) + (1 - y_i) * log(1 - prob_i)
+    # log(prob_i) = log(sigmoid(lin_pred_i)) = log(1) - log(1 + e^(-lin_pred_i))
+    #             = 0 - log(1 + e^(-lin_pred_i)) = -softplus(-lin_pred_i)
+    # similarly, 1 - prob_i = 1 - sigmoid(lin_pred_i) = sigmoid(-lin_pred_i)
+    # hence, log(1 - prob_i) = log(sigmoid(-lin_pred_i)) = 0 - log(1 + e^lin_pred_i)
+    #                        = -softplus(lin_pred_i)
     # we drop the "-" in front of softplus to reflect neg log like
     return jnp.sum(nn.softplus(jnp.where(y, -lin_pred, lin_pred)))
 
