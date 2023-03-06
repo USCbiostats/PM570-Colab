@@ -175,6 +175,7 @@ def _bern_negloglike(beta, y, X):
 class LogisticRegression(AbstractRegressionFunc):
     def __init__(self, tol=1e-3, step_size=1e-1, maxiter=100):
         self.tol = tol
+        self.step_size = step_size
         self.maxiter = maxiter
 
     def __call__(self, data, x):
@@ -187,7 +188,7 @@ class LogisticRegression(AbstractRegressionFunc):
 
         # optimize neg loglikelihood
         optstate = newton_cg(
-            _loss, jnp.zeros(X.shape[1]), step_size, tol=self.tol, maxiter=self.maxiter
+            _loss, jnp.zeros(X.shape[1]), self.step_size, tol=self.tol, maxiter=self.maxiter
         )
 
         # pull out results
@@ -209,7 +210,7 @@ class LogisticRegression(AbstractRegressionFunc):
         return data, jnp.array([beta_hat, se, t_scores, log_p_value, converged]).T[0]
 
     def tree_flatten(self):
-        children = (self.tol, self.maxiter)
+        children = (self.tol, self.step_size, self.maxiter)
         aux = ()
         return (children, aux)
 
