@@ -172,7 +172,7 @@ def _bern_negloglike(beta, y, X):
 
 
 class LogisticRegression(AbstractRegressionFunc):
-    def __init__(self, tol=1e-3, maxiter=100):
+    def __init__(self, tol=1e-3, step_size=1e-1, maxiter=100):
         self.tol = tol
         self.maxiter = maxiter
 
@@ -181,11 +181,15 @@ class LogisticRegression(AbstractRegressionFunc):
         y, covar = data
         X = _pad_variant(x, covar)
 
+        # close over data to get 'simple' function
         _loss = partial(_bern_negloglike, y=y, X=X)
-        optstate = _newton_cg(
-            _loss, jnp.zeros(X.shape[1]), tol=self.tol, maxiter=self.maxiter
+
+        # optimize neg loglikelihood
+        optstate = newton_cg(
+            _loss, jnp.zeros(X.shape[1]), step_size, tol=self.tol, maxiter=self.maxiter
         )
 
+        # pull out results
         loss_imo, loss_i, iter_i, x_i = optstate
         beta_hat = x_i
         converged = jnp.all(
@@ -195,7 +199,7 @@ class LogisticRegression(AbstractRegressionFunc):
         )
         converged = (jnp.ones(X.shape[1]) * converged).astype(float)
 
-        # not exactly the fisher information matrix, but close enough...
+        # hessian = fisher information matrix when using canonical link
         se = jnp.sqrt(jnp.diag(jnp.linalg.inv(jax.hessian(_loss)(beta_hat))))
         t_scores = beta_hat / se
         # p_value = jnp.array(2 * stats.t.sf(abs(t_scores), df=df))
