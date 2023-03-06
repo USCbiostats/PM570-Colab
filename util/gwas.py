@@ -12,7 +12,7 @@ def _trait_scan(
     X: jnp.ndarray,
     y: jnp.ndarray,
     covar: jnp.ndarray,
-    func: opt._AbstractRegressionFunc,
+    func: opt.AbstractRegressionFunc,
 ) -> jnp.ndarray:
     """Internal function to perform a scan over genotype data using an abstract regression function"""
     n, p = X.shape

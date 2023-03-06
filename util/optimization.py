@@ -11,86 +11,36 @@ import jax.scipy as jsp
 from jax.tree_util import register_pytree_node, register_pytree_node_class
 
 
-@register_pytree_node_class
-class _AbstractRegressionFunc(ABC):
-    """Abstract class that lets us pass around a function
-    into JIT compatible calls
-    """
+def gradient_descent(loss, x0, step_size, tol=1e-3, maxiter=100):
+    """TODO: add step size..."""
+    
+    loss_i = loss(x0)
+    _lgrad = jax.grad(loss)
 
-    @abstractmethod
-    def __call__(self, data, x) -> Tuple[Tuple[jnp.ndarray, jnp.ndarray], jnp.ndarray]:
-        pass
+    def _cond_f(state):
+        loss_imo, loss_i, iter_i, x_i = state
+        diff_check = jnp.fabs(loss_i - loss_imo) > tol
+        iter_check = iter_i < maxiter
+        return jnp.all(jnp.array([diff_check, iter_check]))
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        register_pytree_node(cls, cls.tree_flatten, cls.tree_unflatten)
+    def _body_f(state):
+        loss_imt, loss_imo, iter_imo, x_imo = state
 
-    def tree_flatten(self):
-        children = ()
-        aux = ()
-        return (children, aux)
+        b = _lgrad(x_imo)
 
-    @classmethod
-    def tree_unflatten(cls, aux, children):
-        return cls()
+        d_i = -step_size * b
+        x_i = x_imo + d_i
+        loss_i = loss(x_i)
 
+        return (loss_imo, loss_i, iter_imo + 1, x_i)
 
-def _pad_variant(x: jnp.ndarray, covar: jnp.ndarray) -> jnp.ndarray:
-    """Pad the genotype to include covariates"""
-    X = jnp.hstack((x[:, jnp.newaxis], covar))
-    return X
+    state = (10000, loss_i, 0, x0)
+    state = lax.while_loop(_cond_f, _body_f, state)
 
-
-# OLS using QR decomp with variables (x, covar) and y
-class OLSQR(_AbstractRegressionFunc):
-    def __call__(self, data, x):
-        y, covar = data
-        X = _pad_variant(x, covar)
-
-        q_matrix, r_matrix = jnp.linalg.qr(X, mode="reduced")
-        qty = q_matrix.T @ y
-        beta_hat = jsp.linalg.solve_triangular(r_matrix, qty)
-        df = q_matrix.shape[0] - q_matrix.shape[1]
-        residual = y - q_matrix @ qty
-        rss = jnp.sum(residual**2)
-        sigma = jnp.sqrt(rss / df)
-        se = (
-            jnp.sqrt(
-                jnp.diag(
-                    jsp.linalg.cho_solve((r_matrix, False), jnp.eye(r_matrix.shape[0]))
-                )
-            )
-            * sigma
-        )
-        t_scores = beta_hat / se
-        # p_value = jnp.array(2 * stats.t.sf(abs(t_scores), df=df))
-        log_p_value = jnp.log(2) + jsp.stats.norm.logcdf(-jnp.abs(t_scores))
-
-        return data, jnp.array([beta_hat, se, t_scores, log_p_value]).T[0]
+    return state
 
 
-# OLS using jax built in least-squares function
-class OLSJAX(_AbstractRegressionFunc):
-    def __call__(self, data, x):
-        y, covar = data
-        n = len(y)
-        X = _pad_variant(x, covar)
-
-        beta_hat, rss, rank, svals = jnp.linalg.lstsq(X, y)
-
-        se = jnp.sqrt(rss / (n - rank)) / svals
-        z_scores = beta_hat / se
-        log_p_value = jnp.log(2) + jsp.stats.norm.logcdf(-jnp.abs(z_scores))
-
-        return data, jnp.array([beta_hat, se, z_scores, log_p_value]).T[0]
-
-
-def _hvp(g, primals, tangents):
-    # hessian vector product
-    return jax.jvp(g, (primals,), (tangents,))[1]
-
-
-def _newton_cg(loss, x0, tol=1e-3, maxiter=100):
+def newton_cg(loss, x0, step_size, tol=1e-3, maxiter=100):
     """TODO: add step size..."""
 
     loss_i = loss(x0)
@@ -125,6 +75,86 @@ def _newton_cg(loss, x0, tol=1e-3, maxiter=100):
     return state
 
 
+@register_pytree_node_class
+class AbstractRegressionFunc(ABC):
+    """Abstract class that lets us pass around a function
+    into JIT compatible calls
+    """
+
+    @abstractmethod
+    def __call__(self, data, x) -> Tuple[Tuple[jnp.ndarray, jnp.ndarray], jnp.ndarray]:
+        pass
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        register_pytree_node(cls, cls.tree_flatten, cls.tree_unflatten)
+
+    def tree_flatten(self):
+        children = ()
+        aux = ()
+        return (children, aux)
+
+    @classmethod
+    def tree_unflatten(cls, aux, children):
+        return cls()
+
+
+def _pad_variant(x: jnp.ndarray, covar: jnp.ndarray) -> jnp.ndarray:
+    """Pad the genotype to include covariates"""
+    X = jnp.hstack((x[:, jnp.newaxis], covar))
+    return X
+
+
+# OLS using QR decomp with variables (x, covar) and y
+class OLSQR(AbstractRegressionFunc):
+    def __call__(self, data, x):
+        y, covar = data
+        X = _pad_variant(x, covar)
+
+        q_matrix, r_matrix = jnp.linalg.qr(X, mode="reduced")
+        qty = q_matrix.T @ y
+        beta_hat = jsp.linalg.solve_triangular(r_matrix, qty)
+        df = q_matrix.shape[0] - q_matrix.shape[1]
+        residual = y - q_matrix @ qty
+        rss = jnp.sum(residual**2)
+        sigma = jnp.sqrt(rss / df)
+        se = (
+            jnp.sqrt(
+                jnp.diag(
+                    jsp.linalg.cho_solve((r_matrix, False), jnp.eye(r_matrix.shape[0]))
+                )
+            )
+            * sigma
+        )
+        t_scores = beta_hat / se
+        # p_value = jnp.array(2 * stats.t.sf(abs(t_scores), df=df))
+        log_p_value = jnp.log(2) + jsp.stats.norm.logcdf(-jnp.abs(t_scores))
+
+        return data, jnp.array([beta_hat, se, t_scores, log_p_value]).T[0]
+
+
+# OLS using jax built in least-squares function
+class OLSJAX(AbstractRegressionFunc):
+    def __call__(self, data, x):
+        y, covar = data
+        n = len(y)
+        X = _pad_variant(x, covar)
+
+        beta_hat, rss, rank, svals = jnp.linalg.lstsq(X, y)
+
+        se = jnp.sqrt(rss / (n - rank)) / svals
+        z_scores = beta_hat / se
+        log_p_value = jnp.log(2) + jsp.stats.norm.logcdf(-jnp.abs(z_scores))
+
+        return data, jnp.array([beta_hat, se, z_scores, log_p_value]).T[0]
+
+
+def _hvp(g, primals, tangents):
+    # hessian vector product
+    return jax.jvp(g, (primals,), (tangents,))[1]
+
+
+
 def _bern_negloglike(beta, y, X):
     # squash R => [0, 1]
     lin_pred = X @ beta
@@ -141,7 +171,7 @@ def _bern_negloglike(beta, y, X):
     return jnp.sum(nn.softplus(jnp.where(y, -lin_pred, lin_pred)))
 
 
-class LogisticRegression(_AbstractRegressionFunc):
+class LogisticRegression(AbstractRegressionFunc):
     def __init__(self, tol=1e-3, maxiter=100):
         self.tol = tol
         self.maxiter = maxiter

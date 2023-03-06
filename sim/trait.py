@@ -33,8 +33,12 @@ def naive_trait_sim(X: jnp.ndarray, causal_prop: float, h2g: float, rng_key):
     # select causal SNPs
     causals = rdm.choice(choice_key, p_snps, (num_causal,), replace=False)
 
+    # standardize causal genotypes
+    Xc = X[:, causals]
+    Xc = nn.standardize(Xc, axis=0)
+
     # generate genetic values
-    g = X[:, causals] @ beta
+    g = Xc @ beta
 
     s2g = jnp.var(g)
     s2e = ((1 / h2g) - 1) * s2g
@@ -78,16 +82,19 @@ def naive_disease_sim(
     # select causal SNPs
     causals = rdm.choice(choice_key, p_snps, (num_causal,), replace=False)
 
+    # standardize causal genotypes
+    Xc = X[:, causals]
+    Xc = nn.standardize(Xc, axis=0)
+
     # generate genetic values
-    g = X[:, causals] @ beta
+    g = Xc @ beta
 
     # rescale betas to ensure h2g matches specified h2g
     s2g = jnp.var(g)
     beta *= jnp.sqrt(h2g / s2g)
 
     # final g based on rescale beta
-    g = X[:, causals] @ beta
-    g = g - jnp.mean(g, axis=0)
+    g = Xc @ beta
 
     # upper quantile function to get threshold
     t = -stats.norm.ppf(prevalence, scale=jnp.sqrt(h2g))
